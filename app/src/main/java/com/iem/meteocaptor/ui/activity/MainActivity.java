@@ -16,12 +16,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-
 import com.iem.meteocaptor.R;
 import com.iem.meteocaptor.ui.fragment.ArchiveFragment;
 import com.iem.meteocaptor.ui.fragment.LastMeasureFragment;
+import com.iem.meteocaptor.ui.fragment.NearbyConnectionFragment;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener  {
 
 
     private static final int STOPSPLASH = 0;
@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             switch (msg.what) {
                 case STOPSPLASH:
                     initNavigationDrawer();
-                    displayselectedScreen(R.id.nav_last_measure);
+                    displayselectedScreen(-1);
                     splashScreen.setVisibility(View.GONE);
                     break;
             }
@@ -110,6 +110,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         //initializing the fragment object which is selected
         switch (itemId) {
+            case -1:
+                fragment = NearbyConnectionFragment.newInstance();
+
+                break;
             case R.id.nav_last_measure:
                 fragment = new LastMeasureFragment();
                 break;
