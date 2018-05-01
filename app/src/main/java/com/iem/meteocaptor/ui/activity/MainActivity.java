@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 fragment = new LastMeasureFragment();
                 break;
             case R.id.nav_archive:
-                fragment = new ArchiveFragment();
+                fragment = ArchiveFragment.newInstance();
                 break;
             case R.id.nav_exit:
                 finish();
