@@ -1,8 +1,5 @@
 package com.example.iem.meteocaptorandroidthings;
 import android.Manifest;
-import android.app.Activity;
-import android.app.Fragment;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,17 +13,11 @@ import android.os.HandlerThread;
 import android.os.ParcelFileDescriptor;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.KeyEvent;
-
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -42,12 +33,24 @@ import com.google.android.gms.nearby.connection.PayloadTransferUpdate;
 import com.google.android.gms.nearby.connection.Strategy;
 import com.google.android.things.pio.I2cDevice;
 import com.google.android.things.pio.PeripheralManager;
-
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import android.app.Activity;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.util.Log;
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 
 /**
  * Skeleton of an Android Things activity.
@@ -92,6 +95,68 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private ImageView iv;
 
+
+    private Si7021SensorDriver mEnvironmentalSensorDriver;
+    private SensorManager mSensorManager;
+
+
+    private float mLastTemperature;
+    private float mLastHumidity;
+
+
+    // Callback used when we register the Si7021 sensor driver with the system's SensorManager.
+    private SensorManager.DynamicSensorCallback mDynamicSensorCallback = new SensorManager.DynamicSensorCallback() {
+
+        @Override
+        public void onDynamicSensorConnected(Sensor sensor) {
+            if (sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+                // Our sensor is connected. Start receiving temperature data.
+                mSensorManager.registerListener(mTemperatureListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+                Log.d(TAG, "Test 1");
+
+            } else if (sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
+                // Our sensor is connected. Start receiving pressure data.
+                mSensorManager.registerListener(mHumidityListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+                Log.d(TAG, "Test 2");
+            }
+        }
+
+        @Override
+        public void onDynamicSensorDisconnected(Sensor sensor) {
+            super.onDynamicSensorDisconnected(sensor);
+            Log.d(TAG, "Sensor disco: "+ sensor);
+        }
+    };
+
+    // Callback when SensorManager delivers temperature data.
+    private SensorEventListener mTemperatureListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            mLastTemperature = event.values[0];
+            Log.d(TAG, "sensor changed: " + mLastTemperature);
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            Log.d(TAG, "accuracy changed: " + accuracy);
+        }
+    };
+
+    // Callback when SensorManager delivers humidity data.
+    private SensorEventListener mHumidityListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            mLastHumidity = event.values[0];
+            Log.d(TAG, "sensor changed: " + mLastHumidity);
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            Log.d(TAG, "accuracy changed: " + accuracy);
+        }
+    };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState)  {
 
@@ -128,6 +193,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             @Override
             public void onClick(View view) {
                 mCamera.takePicture();
+                //mCamera.shutDown();
 
                 Log.e("SPAGHETT", "SOMEBODY TOUCHA MY SPAGHETT !!!");
             }
@@ -138,6 +204,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             // A problem occurred auto-granting the permission
             Log.e(TAG, "No Camera permission");
             return;
+        }
+
+        Log.d(TAG, "Started Weather Station");
+
+        mSensorManager = ((SensorManager) getSystemService(SENSOR_SERVICE));
+        try {
+            mEnvironmentalSensorDriver = new Si7021SensorDriver("I2C1");
+            mSensorManager.registerDynamicSensorCallback(mDynamicSensorCallback);
+            mEnvironmentalSensorDriver.registerTemperatureSensor();
+            mEnvironmentalSensorDriver.registerHumiditySensor();
+
+            Log.d(TAG, "Initialized I2C SI7021");
+        } catch (IOException e) {
+            throw new RuntimeException("Error initializing SI7021", e);
         }
 
 
@@ -190,6 +270,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onDestroy();
         mCamera.shutDown();
         mCameraThread.quitSafely();
+        Log.d(TAG, "Destroying");
+        // Clean up sensor registrations
+        mSensorManager.unregisterListener(mTemperatureListener);
+        mSensorManager.unregisterListener(mHumidityListener);
+        mSensorManager.unregisterDynamicSensorCallback(mDynamicSensorCallback);
+
+        // Clean up peripheral.
+        if (mEnvironmentalSensorDriver != null) {
+            try {
+                mEnvironmentalSensorDriver.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mEnvironmentalSensorDriver = null;
+        }
     }
 
     /**
@@ -197,29 +292,85 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
      */
     private ImageReader.OnImageAvailableListener mOnImageAvailableListener =
             new ImageReader.OnImageAvailableListener() {
+
                 @Override
                 public void onImageAvailable(ImageReader reader) {
+
                     Image image = reader.acquireLatestImage();
-                    File imageFile = new File(image);
-                    // get image bytes
-               //     ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                   // byte[] bytes = new byte[buffer.capacity()];
-                  //  Nearby.Connections.sendPayload(mGoogleApiClient, endpoint, Payload.fromFile
-                   // buffer.get(bytes);
-                  //  final Bitmap bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
-                    image.close();
-                    runOnUiThread(new Runnable() {
 
-                        @Override
-                        public void run() {
-                       //     iv.setImageBitmap(bitmapImage);
-                            // Stuff that updates the UI
-
+                    FileOutputStream fos = null;
+                    File file;
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.capacity()];
+                    buffer.get(bytes);
+                    try {
+                        //Specify the file path here
+                        file = new File(getFilesDir() + String.valueOf(mLastTemperature) + "_" + String.valueOf(mLastHumidity));
+                        fos = new FileOutputStream(file);
+                        if (!file.exists()) {
+                            file.createNewFile();
                         }
-                    });
+
+                        fos.write(bytes);
+                        fos.flush();
+                        System.out.println("File Written Successfully");
+                    }
+                    catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                    finally {
+                        try {
+                            if (fos != null)
+                            {
+                                fos.close();
+                            }
+                        }
+                        catch (IOException ioe) {
+                            System.out.println("Error in closing the Stream");
+                        }
+                    }
+                        Uri uri = Uri.fromFile(new File(getFilesDir() +String.valueOf(mLastTemperature) + "_" + String.valueOf(mLastHumidity)));
+                        ParcelFileDescriptor pfd = null;
+                        try {
+                            pfd = getContentResolver().openFileDescriptor(uri, "r");
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        Payload filePayload = Payload.fromFile(pfd);
+                        Log.d("SPAGHETT", String.valueOf(filePayload.getId()));
+
+                        // Construct a simple message mapping the ID of the file payload to the desired filename.
+                        String payloadFilenameMessage = filePayload.getId() + ":" + uri.getLastPathSegment();
+
+                        // Send this message as a bytes payload.
+                        try {
+                            Nearby.Connections.sendPayload(mGoogleApiClient,
+                                    endpoint, Payload.fromBytes(payloadFilenameMessage.getBytes("UTF-8")));
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+
+                        // Finally, send the file payload.
+                        Nearby.Connections.sendPayload(mGoogleApiClient, endpoint, filePayload);
+
+                        // PNG is a lossless format, the compression factor (100) is ignored
+
+                        image.close();
+                       // final Bitmap finalBitmap = bitmap;
+                            final Bitmap bitmapImage = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, null);
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                iv.setImageBitmap(bitmapImage);
+                                //Stuff that updates the UI
+
+                            }
+                        });
 
 
-                }
+                    }
+
             };
 
     @Override
@@ -243,83 +394,5 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
-
-
-
-
-      /*  private static final String I2C_ADDRESS = "I2C1";
-        private static final int BMP280_TEMPERATURE_SENSOR_SLAVE = 0x3C;
-
-        private static final int REGISTER_TEMPERATURE_RAW_VALUE_START = 0xFA;
-        private static final int REGISTER_TEMPERATURE_RAW_VALUE_SIZE = 3;
-
-        private final short[] calibrationData = new short[3];
-
-        private I2cDevice bus;
-        private Handler handler;
-
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-
-            PeripheralManager service = PeripheralManager.getInstance();
-            try {
-                bus = service.openI2cDevice(I2C_ADDRESS, BMP280_TEMPERATURE_SENSOR_SLAVE);
-            } catch (IOException e) {
-                throw new IllegalStateException(I2C_ADDRESS + " bus slave "
-                        + BMP280_TEMPERATURE_SENSOR_SLAVE + " connection cannot be opened.", e);
-            }
-
-            try {
-                calibrationData[0] = bus.readRegWord(BMP280_TEMPERATURE_SENSOR_SLAVE);
-                calibrationData[1] = bus.readRegWord(BMP280_TEMPERATURE_SENSOR_SLAVE);
-                calibrationData[2] = bus.readRegWord(BMP280_TEMPERATURE_SENSOR_SLAVE);
-            } catch (IOException e) {
-                throw new IllegalStateException("Cannot read calibration data, can't read temperature without it.", e);
-            }
-
-            handler = new Handler(Looper.getMainLooper());
-        }
-
-        @Override
-        protected void onStart() {
-            super.onStart();
-            handler.post(readTemperature);
-        }
-
-        private final Runnable readTemperature = new Runnable() {
-            @Override
-            public void run() {
-                byte[] data = new byte[REGISTER_TEMPERATURE_RAW_VALUE_SIZE];
-                try {
-                    bus.readRegBuffer(REGISTER_TEMPERATURE_RAW_VALUE_START, data, REGISTER_TEMPERATURE_RAW_VALUE_SIZE);
-                } catch (IOException e) {
-                    Log.e("TUT", "Cannot read temperature from bus.", e);
-                }
-                if (data.length != 0) {
-                    float temperature = Bmp280DataSheet.readTemperatureFrom(data, calibrationData);
-                    Log.d("TUT", "Got temperature of: " + temperature);
-                }
-
-                handler.postDelayed(readTemperature, TimeUnit.HOURS.toMillis(1));
-            }
-        };
-
-        @Override
-        protected void onStop() {
-            handler.removeCallbacks(readTemperature);
-            super.onStop();
-        }
-
-        @Override
-        protected void onDestroy() {
-            try {
-                bus.close();
-            } catch (IOException e) {
-                Log.e("TUT", I2C_ADDRESS + " bus slave "
-                        + BMP280_TEMPERATURE_SENSOR_SLAVE + "connection cannot be closed, you may experience errors on next launch.", e);
-            }
-            super.onDestroy();
-        }*/
 
     }
