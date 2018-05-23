@@ -1,6 +1,7 @@
 package com.iem.meteocaptor.ui.fragment;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -92,15 +93,16 @@ public class ArchiveFragment extends Fragment {
     }
 
     private void initList() {
+        Bitmap screenShot = null;
         listMeasure = new ArrayList<>();
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
-        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
+        listMeasure.add(new WeatherModel(new Date(),Math.random() * 100, Math.random() * 100, screenShot));
     }
 
 }
