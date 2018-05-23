@@ -198,7 +198,8 @@ public class NearbyConnectionFragment extends Fragment implements GoogleApiClien
                                 byte[] bitmapdata = readBytesFromFile(file);
                                 Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapdata, 0, bitmapdata.length);
                                 WeatherModel model = new WeatherModel(new Date(),temp,humid,bitmap);
-                                WeatherManager.getInstance().setLastMeasure(model);
+                                weatherManager.setLastMeasure(model);
+                                weatherManager.addNewCapture(model);
                                 initLastTemperature();
                             } catch (IOException e) {
                                 e.printStackTrace();

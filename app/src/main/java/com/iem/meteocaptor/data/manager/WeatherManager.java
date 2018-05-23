@@ -2,13 +2,14 @@ package com.iem.meteocaptor.data.manager;
 
 import com.iem.meteocaptor.data.model.WeatherModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class WeatherManager {
 
     private static WeatherManager instance  = null;
     private WeatherModel lastMeasure;
-    private List<WeatherModel> archive;
+    private ArrayList<WeatherModel> archive = new ArrayList<>();
 
     public static WeatherManager getInstance() {
         if (instance == null) {
@@ -27,7 +28,7 @@ public class WeatherManager {
         return lastMeasure;
     }
 
-    public void setArchive(List<WeatherModel> archive)
+    public void setArchive(ArrayList<WeatherModel> archive)
     {
         this.archive = archive;
     }
@@ -35,6 +36,10 @@ public class WeatherManager {
     public List<WeatherModel> getArchive()
     {
         return archive;
+    }
+
+    public void addNewCapture(WeatherModel model){
+        archive.add(model);
     }
 
 }

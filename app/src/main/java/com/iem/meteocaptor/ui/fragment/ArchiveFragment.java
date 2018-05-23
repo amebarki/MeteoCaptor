@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.iem.meteocaptor.R;
+import com.iem.meteocaptor.data.manager.WeatherManager;
 import com.iem.meteocaptor.data.model.WeatherModel;
 import com.iem.meteocaptor.tools.CustomItemClickListener;
 import com.iem.meteocaptor.ui.adapter.WeatherAdapter;
@@ -82,7 +83,7 @@ public class ArchiveFragment extends Fragment {
         recyclerView = view.findViewById(R.id.fragment_archive_recycler_view);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager layoutManager = new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false);
-        final WeatherAdapter weatherAdapter = new WeatherAdapter(listMeasure, this, new CustomItemClickListener() {
+        final WeatherAdapter weatherAdapter = new WeatherAdapter(WeatherManager.getInstance().getArchive(), this, new CustomItemClickListener() {
             @Override
             public void onItemClick(View v, int position) {
                 Toast.makeText(context, "position : " + position, Toast.LENGTH_SHORT).show();
