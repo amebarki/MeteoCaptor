@@ -1,5 +1,7 @@
 package com.iem.meteocaptor.data.model;
 
+import android.graphics.Bitmap;
+
 import java.util.Date;
 
 public class WeatherModel {
@@ -7,10 +9,10 @@ public class WeatherModel {
     private Date date;
     private double temperature;
     private double humidity;
-    private String screenshot;
+    private Bitmap screenshot;
 
 
-    public WeatherModel(Date date,double temperature, double humidity, String screenshot) {
+    public WeatherModel(Date date,double temperature, double humidity, Bitmap screenshot) {
         this.date = date;
         this.temperature = temperature;
         this.humidity = humidity;
@@ -33,11 +35,11 @@ public class WeatherModel {
         this.humidity = humidity;
     }
 
-    public String getScreenshot() {
+    public Bitmap getScreenshot() {
         return screenshot;
     }
 
-    public void setScreenshot(String screenshot) {
+    public void setScreenshot(Bitmap screenshot) {
         this.screenshot = screenshot;
     }
 

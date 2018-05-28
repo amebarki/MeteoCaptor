@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.iem.meteocaptor.R;
@@ -54,6 +55,7 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
         holder.humidityTextView.setText("Humidity" + listMeasure.get(position).getHumidity() +"");
         holder.temperatureTextView.setText("Temperature" + listMeasure.get(position).getTemperature() +"");
        // Picasso.with(context).load(pokemonArrayList.get(position).getSprite()).into(holder.imageView);
+        holder.screenShot.setImageBitmap(listMeasure.get(position).getScreenshot());
     }
 
 
@@ -72,11 +74,13 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.WeatherV
         public TextView dateTextView;
         public TextView temperatureTextView;
         public TextView humidityTextView;
+        public ImageView screenShot;
         public WeatherViewHolder(View itemView) {
             super(itemView);
             this.temperatureTextView = itemView.findViewById(R.id.item_archive_temperature) ;
             this.humidityTextView = itemView.findViewById(R.id.item_archive_humidity);
             this.dateTextView = itemView.findViewById(R.id.item_archive_date);
+            this.screenShot = itemView.findViewById(R.id.item_archive_screenshot);
         }
     }
 

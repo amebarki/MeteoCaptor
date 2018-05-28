@@ -55,7 +55,7 @@ public class LastMeasureFragment extends Fragment {
 
 
     private void init() {
-        weatherManager.setLastMeasure(new WeatherModel(new Date(), Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
+       // weatherManager.setLastMeasure(new WeatherModel(new Date(), Math.random() * 100, Math.random() * 100, "Screenshot" + Math.random() * 1000));
     }
 
 }
